@@ -408,12 +408,11 @@ exports.viewUsers = async (req, res) => {
       return res.status(404).json({ error: "User not found." });
     }
 
-    if (user.role_id !== '60fadeda-b7d3-11ef-8c4c-3a7fce8d5812') { 
+    if (user.role_id !== "60fadeda-b7d3-11ef-8c4c-3a7fce8d5812") {
       return res
         .status(403)
         .json({ error: "Access denied. Admin privileges required." });
     }
-
 
     const users = await User.findAll({
       attributes: ["id", "name", "email", "role_id"],
@@ -440,5 +439,66 @@ exports.viewUsers = async (req, res) => {
   }
 };
 
+exports.changeUserRole = async (req, res) => {
+  const token = req.headers["authorization"]?.split(" ")[1];
 
+  if (!token) {
+    return res
+      .status(401)
+      .json({ error: "No token provided. Authorization denied." });
+  }
 
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const adminUser = await User.findByPk(decoded.id);
+
+    if (!adminUser) {
+      return res.status(404).json({ error: "Admin user not found." });
+    }
+
+    if (adminUser.role_id !== "60fadeda-b7d3-11ef-8c4c-3a7fce8d5812") {
+      return res.status(403).json({ error: "Access denied. Admins only." });
+    }
+
+    const { user_id, newRole_id } = req.body;
+
+    if (!user_id || !newRole_id) {
+      return res
+        .status(400)
+        .json({ error: "User ID and new role ID are required." });
+    }
+
+    const user = await User.findByPk(user_id);
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found." });
+    }
+
+    user.role_id = newRole_id;
+    await user.save();
+
+    res.status(200).json({
+      message: "User role updated successfully!",
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role_id: user.role_id,
+      },
+    });
+  } catch (error) {
+    console.error("Error updating user role:", error);
+
+    if (error.name === "JsonWebTokenError") {
+      return res.status(400).json({ error: "Invalid token." });
+    }
+
+    if (error.name === "TokenExpiredError") {
+      return res
+        .status(401)
+        .json({ error: "Token has expired. Please log in again." });
+    }
+
+    res.status(500).json({ error: "Failed to update user role." });
+  }
+};

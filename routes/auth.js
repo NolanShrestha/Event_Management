@@ -1,5 +1,5 @@
 const express = require('express');
-const { register, login, createEvent, getEvents, editEvent, deleteEvent, bookEvent, viewUsers,
+const { register, login, createEvent, getEvents, editEvent, deleteEvent, bookEvent, viewUsers, changeUserRole,
     } = require('../controllers/middlewares');
 const router = express.Router();
 
@@ -11,5 +11,6 @@ router.patch('/editEvent', editEvent);
 router.delete('/deleteEvent', deleteEvent);
 router.post('/bookEvent', bookEvent);
 router.get('/viewUsers', viewUsers);
+router.patch('/changeUserRole', changeUserRole);
 
 module.exports = router;
