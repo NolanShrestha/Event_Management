@@ -408,11 +408,12 @@ exports.viewUsers = async (req, res) => {
       return res.status(404).json({ error: "User not found." });
     }
 
-    if (user.role_id !== "60fadeda-b7d3-11ef-8c4c-3a7fce8d5812") {
+    if (user.role_id !== '60fadeda-b7d3-11ef-8c4c-3a7fce8d5812') { 
       return res
         .status(403)
         .json({ error: "Access denied. Admin privileges required." });
     }
+
 
     const users = await User.findAll({
       attributes: ["id", "name", "email", "role_id"],
@@ -438,3 +439,6 @@ exports.viewUsers = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch users." });
   }
 };
+
+
+
