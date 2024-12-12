@@ -194,12 +194,10 @@ exports.editEvent = async (req, res, next) => {
       !new_description ||
       !new_event_date
     ) {
-      return res
-        .status(400)
-        .json({
-          error:
-            "Title, description, new title, new description, and new event date are required!",
-        });
+      return res.status(400).json({
+        error:
+          "Title, description, new title, new description, and new event date are required!",
+      });
     }
 
     const adminRole = await Role.findOne({ where: { role_name: "admin" } });
@@ -223,11 +221,9 @@ exports.editEvent = async (req, res, next) => {
     }
 
     if (event.created_by !== createdBy && role_id !== adminRole.id) {
-      return res
-        .status(403)
-        .json({
-          error: "Permission denied! You are not allowed to edit this event.",
-        });
+      return res.status(403).json({
+        error: "Permission denied! You are not allowed to edit this event.",
+      });
     }
 
     event.title = new_title;
@@ -287,12 +283,10 @@ exports.deleteEvent = async (req, res, next) => {
     }
 
     if (role_id !== adminRole.id && userId !== event.created_by) {
-      return res
-        .status(403)
-        .json({
-          error:
-            "Permission denied! Only admins or event creators can delete events.",
-        });
+      return res.status(403).json({
+        error:
+          "Permission denied! Only admins or event creators can delete events.",
+      });
     }
 
     await Event.destroy({ where: { id: eventId } });
@@ -392,5 +386,55 @@ exports.bookEvent = async (req, res, next) => {
     }
 
     res.status(500).json({ error: "Failed to book the event!" });
+  }
+};
+
+exports.viewUsers = async (req, res) => {
+  const token = req.headers["authorization"]?.split(" ")[1];
+
+  if (!token) {
+    return res
+      .status(401)
+      .json({ error: "No token provided. Authorization denied." });
+  }
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const userId = decoded.id;
+
+    const user = await User.findByPk(userId);
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found." });
+    }
+
+    if (user.role_id !== "60fadeda-b7d3-11ef-8c4c-3a7fce8d5812") {
+      return res
+        .status(403)
+        .json({ error: "Access denied. Admin privileges required." });
+    }
+
+    const users = await User.findAll({
+      attributes: ["id", "name", "email", "role_id"],
+    });
+
+    res.status(200).json({
+      message: "Users fetched successfully!",
+      users,
+    });
+  } catch (error) {
+    console.error("Error during authentication or fetching users:", error);
+
+    if (error.name === "JsonWebTokenError") {
+      return res.status(400).json({ error: "Invalid token." });
+    }
+
+    if (error.name === "TokenExpiredError") {
+      return res
+        .status(401)
+        .json({ error: "Token has expired. Please log in again." });
+    }
+
+    res.status(500).json({ error: "Failed to fetch users." });
   }
 };
